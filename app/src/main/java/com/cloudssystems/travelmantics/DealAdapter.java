@@ -28,10 +28,10 @@ public class DealAdapter extends RecyclerView.Adapter<DealAdapter.DealViewHolder
         mChildEventListener = new ChildEventListener() {
             @Override
             public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-
                 TravelDeal td = dataSnapshot.getValue(TravelDeal.class);
-                Log.d("Deal: ",td.getTitle());
+
                 td.setId(dataSnapshot.getKey());
+                Log.d("Deal: ",td.getTitle());
                 deals.add(td);
                 notifyItemInserted(deals.size() - 1);
 
@@ -77,6 +77,9 @@ public class DealAdapter extends RecyclerView.Adapter<DealAdapter.DealViewHolder
 
     @Override
     public int getItemCount() {
+        if (deals == null) {
+            return 0;
+        }
         return deals.size();
     }
 
@@ -84,7 +87,7 @@ public class DealAdapter extends RecyclerView.Adapter<DealAdapter.DealViewHolder
         TextView tvTitle;
         public DealViewHolder(@NonNull View itemView) {
             super(itemView);
-            tvTitle = itemView.findViewById(R.id.txtTitle);
+            tvTitle = itemView.findViewById(R.id.tvTitle);
         }
         public void bind(TravelDeal deal){
             tvTitle.setText(deal.getTitle());
