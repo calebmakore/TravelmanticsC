@@ -2,12 +2,14 @@ package com.cloudssystems.travelmantics;
 
 
 import android.app.Activity;
+import android.util.Log;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import com.firebase.ui.auth.AuthUI;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.*;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15,34 +17,79 @@ import java.util.List;
 
 
 public class FirebaseUtil {
-    public static FirebaseDatabase mFirebaseDataBase;
+    public static FirebaseDatabase mFirebaseDatabase;
     public static DatabaseReference mDatabaseReference;
     private static FirebaseUtil firebaseUtil;
     public static FirebaseAuth mFirebaseAuth;
-
+    public static FirebaseStorage mStorage;
+    public static StorageReference mStorageRef;
+    private static ListActivity caller;
+    private  static StorageReference mStorageReference;
     public static FirebaseAuth.AuthStateListener mAuthListener;
 
     public  static  ArrayList<TravelDeal> mDeals;
     private static final int RC_SIGN_IN = 123;
-    private static Activity caller;
+
     private FirebaseUtil(){}
     public static boolean isAdmin;
-    public static void  openFbReference(String ref, final Activity callerActivity){
-        if(firebaseUtil == null){
+    public static void  openFbReference(String ref, final ListActivity callerActivity){
+        if (firebaseUtil == null) {
             firebaseUtil = new FirebaseUtil();
-            mFirebaseDataBase = FirebaseDatabase.getInstance();
+            mFirebaseDatabase = FirebaseDatabase.getInstance();
             mFirebaseAuth = FirebaseAuth.getInstance();
             caller = callerActivity;
             mAuthListener = new FirebaseAuth.AuthStateListener() {
                 @Override
                 public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
-                    FirebaseUtil.signIn();
+                    if (firebaseAuth.getCurrentUser() == null) {
+                        FirebaseUtil.signIn();
+                    }
+                    else {
+                        String userId = firebaseAuth.getUid();
+                        checkAdmin(userId);
+                    }
                     Toast.makeText(callerActivity.getBaseContext(), "Welcome back!", Toast.LENGTH_LONG).show();
                 }
             };
+            connectStorage();
         }
         mDeals = new ArrayList<TravelDeal>();
-        mDatabaseReference = mFirebaseDataBase.getReference().child(ref);
+        mDatabaseReference = mFirebaseDatabase.getReference().child(ref);
+    }
+
+    private static void checkAdmin(String uid) {
+        FirebaseUtil.isAdmin = false;
+        DatabaseReference ref = mFirebaseDatabase.getReference().child("administrators")
+                .child(uid);
+        ChildEventListener listener = new ChildEventListener() {
+            @Override
+            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+                FirebaseUtil.isAdmin = true;
+                Log.d("Admin", "You are an administrator");
+                caller.showMenu();
+            }
+
+            @Override
+            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+
+            }
+
+            @Override
+            public void onChildRemoved(DataSnapshot dataSnapshot) {
+
+            }
+
+            @Override
+            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        };
+        ref.addChildEventListener(listener);
     }
 
     private static void signIn() {
@@ -66,7 +113,10 @@ public class FirebaseUtil {
         mFirebaseAuth.removeAuthStateListener(mAuthListener);
     }
 
-
+    public static void connectStorage() {
+        mStorage = FirebaseStorage.getInstance();
+        mStorageRef = mStorage.getReference().child("deals_pictures");
+    }
 
 
 }
